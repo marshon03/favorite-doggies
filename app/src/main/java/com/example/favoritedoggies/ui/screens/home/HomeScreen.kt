@@ -118,7 +118,7 @@ fun BreedItem(
                         .clickable { onSubBreedFavoriteClick(subBreed.name) },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = subBreed.name, modifier = Modifier.weight(1f))
+                    Text(text = " - " + subBreed.name, modifier = Modifier.weight(1f))
                     Icon(
                         imageVector = if (subBreed.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = if (subBreed.isFavorite) "Unfavorite" else "Favorite",
