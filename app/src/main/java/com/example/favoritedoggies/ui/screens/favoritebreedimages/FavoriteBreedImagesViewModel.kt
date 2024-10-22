@@ -33,27 +33,36 @@ class FavoriteBreedImagesViewModel @Inject constructor(
             favoriteRepository.favoriteBreedsFlow.collect { favoriteBreeds ->
                 favoriteRepository.favoriteSubBreedsFlow.collect { favoriteSubBreeds ->
 
-                    // Associate breeds with their favorite sub-breeds
-                    val breedToFavoriteSubBreedsMap = favoriteBreeds.associateWith { breed ->
+                    val validFavoriteBreeds = favoriteBreeds.filter { it.isNotBlank() }
+
+                    if (validFavoriteBreeds.isNotEmpty()) {
+                        // Associate breeds with their favorite sub-breeds
+                        val breedToFavoriteSubBreedsMap = validFavoriteBreeds.associateWith { breed ->
+                            favoriteSubBreeds.filter { subBreed ->
+                                subBreed.startsWith(breed, ignoreCase = true)
+                            }
+                        }
+
+                        breedToFavoriteSubBreedsMap.forEach { (breed, subBreeds) ->
+                            breeds.add(breed)
+
+                            if (!validFavoriteBreeds.contains(breed)) {
+                                breeds.addAll(subBreeds)
+                            }
+                        }
+                    }
+
+                    val independentSubBreeds = if (validFavoriteBreeds.isEmpty()) {
+                        favoriteSubBreeds
+                    } else {
                         favoriteSubBreeds.filter { subBreed ->
-                            subBreed.startsWith(
-                                breed,
-                                ignoreCase = true
-                            )
+                            validFavoriteBreeds.none { breed ->
+                                subBreed.startsWith(breed, ignoreCase = true)
+                            }
                         }
                     }
 
-                    breedToFavoriteSubBreedsMap.forEach { (breed, subBreeds) ->
-                        breeds.add(breed)
-                    }
-
-                    // Handle favorite sub-breeds without a parent favorite breed
-                    val independentSubBreeds = favoriteSubBreeds.filter { subBreed ->
-                        favoriteBreeds.none { breed ->
-                            subBreed.startsWith(breed, ignoreCase = true)
-                        }
-                    }
-
+                    // Add favorited sub-breeds without parent breed
                     if (independentSubBreeds.isNotEmpty()) {
                         breeds.addAll(independentSubBreeds)
                     }
