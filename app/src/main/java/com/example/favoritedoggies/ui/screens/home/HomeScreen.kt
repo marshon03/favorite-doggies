@@ -27,17 +27,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.data.model.breed.BreedWithSubBreeds
+import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navigateToFavorites: () -> Unit, viewModel: HomeViewModel) {
+
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Favorite Doggies") }) },
@@ -70,9 +74,15 @@ fun HomeScreen(navigateToFavorites: () -> Unit, viewModel: HomeViewModel) {
                         items(viewModel.breedsList.value ?: emptyList()) { breedItem ->
                             BreedItem(
                                 breedItem,
-                                onBreedFavoriteClick = { viewModel.onFavoriteClicked(breedItem.breedName) },
+                                onBreedFavoriteClick = {
+                                    scope.launch {
+                                        viewModel.onFavoriteClicked(breedItem.breedName)
+                                    }
+                                },
                                 onSubBreedFavoriteClick = { subBreedName ->
-                                    viewModel.onFavoriteClicked(breedItem.breedName, subBreedName)
+                                    scope.launch {
+                                        viewModel.onFavoriteClicked(breedItem.breedName, subBreedName)
+                                    }
                                 })
                         }
                     }
