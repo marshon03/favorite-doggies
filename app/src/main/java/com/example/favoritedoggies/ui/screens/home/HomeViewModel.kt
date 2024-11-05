@@ -44,10 +44,17 @@ class HomeViewModel @Inject constructor(
 
                 viewModelScope.launch {
                     favoriteRepository.favoriteSubBreedsFlow.collect { favoriteSubBreeds ->
-                        // Update sub-breeds with favorite status
+                        val favoriteSubBreedsSet = favoriteSubBreeds.toSet()
+
                         breedsList.value = breedsList.value?.map { breed ->
+                            // Only update sub-breeds if there’s a change in favorite status
                             val updatedSubBreeds = breed.subBreeds.map { subBreed ->
-                                subBreed.copy(isFavorite = favoriteSubBreeds.contains("${breed.breedName}-${subBreed.name}"))
+                                val isFavorite = favoriteSubBreedsSet.contains("${breed.breedName}-${subBreed.name}")
+                                if (subBreed.isFavorite != isFavorite) {
+                                    subBreed.copy(isFavorite = isFavorite)
+                                } else {
+                                    subBreed
+                                }
                             }
                             breed.copy(subBreeds = updatedSubBreeds)
                         }
@@ -97,9 +104,15 @@ class HomeViewModel @Inject constructor(
     private fun saveFavoritesToDataStore() {
         viewModelScope.launch {
             val favoriteBreeds = breedsList.value?.filter { it.isFavorite }?.map { it.breedName } ?: emptyList()
-            val favoriteSubBreeds = breedsList.value?.flatMap { breed ->
-                breed.subBreeds.filter { it.isFavorite }.map { subBreed -> "${breed.breedName}-${subBreed.name}" }
-            } ?: emptyList()
+            val favoriteSubBreeds = breedsList.value
+                ?.asSequence()
+                ?.filter { breed -> breed.subBreeds.any { it.isFavorite } }
+                ?.flatMap { breed ->
+                    breed.subBreeds.asSequence()
+                        .filter { it.isFavorite }
+                        .map { subBreed -> "${breed.breedName}-${subBreed.name}" }
+                }
+                ?.toList() ?: emptyList()
 
             favoriteRepository.saveFavoriteBreeds(favoriteBreeds, favoriteSubBreeds)
         }
